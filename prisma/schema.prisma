@@ -1,0 +1,128 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ==================== CATALOGOS ====================
+
+model Product {
+  id            Int      @id @default(autoincrement())
+  codigo        String   @unique
+  nombre        String
+  categoria     String?
+  descripcion   String?
+  imagen        String?  // URL o base64 de la imagen
+  costoDefault  Decimal  @default(0) @map("costo_default")
+  precioDefault Decimal  @default(0) @map("precio_default")
+  stockInicial  Decimal  @default(0) @map("stock_inicial")
+  stockMinimo   Decimal  @default(0) @map("stock_minimo")
+  activo        Boolean  @default(true)
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  compras Purchase[]
+  ventas  Sale[]
+
+  @@map("productos")
+}
+
+model Supplier {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  contacto  String?
+  telefono  String?
+  email     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  compras Purchase[]
+
+  @@map("proveedores")
+}
+
+model Customer {
+  id        Int      @id @default(autoincrement())
+  nombre    String
+  contacto  String?
+  telefono  String?
+  email     String?
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ventas Sale[]
+
+  @@map("clientes")
+}
+
+model PaymentMethod {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  ventas Sale[]
+
+  @@map("formas_pago")
+}
+
+// ==================== TRANSACCIONES ====================
+
+model Purchase {
+  id             Int      @id @default(autoincrement())
+  fecha          DateTime
+  proveedorId    Int      @map("proveedor_id")
+  productoId     Int      @map("producto_id")
+  codigoProducto String   @map("codigo_producto")
+  nombreProducto String   @map("nombre_producto")
+  cantidad       Decimal
+  costoUnitario  Decimal  @map("costo_unitario")
+  costoTotal     Decimal  @map("costo_total")
+  notas          String?
+  createdAt      DateTime @default(now()) @map("created_at")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  proveedor Supplier @relation(fields: [proveedorId], references: [id])
+  producto  Product  @relation(fields: [productoId], references: [id])
+
+  @@index([fecha])
+  @@index([proveedorId])
+  @@index([productoId])
+  @@map("compras")
+}
+
+model Sale {
+  id               Int      @id @default(autoincrement())
+  fecha            DateTime
+  formaPagoId      Int      @map("forma_pago_id")
+  clienteId        Int      @map("cliente_id")
+  productoId       Int      @map("producto_id")
+  codigoProducto   String   @map("codigo_producto")
+  nombreProducto   String   @map("nombre_producto")
+  unidades         Decimal
+  precioUnitario   Decimal  @map("precio_unitario")
+  ventaTotal       Decimal  @map("venta_total")
+  costoAsignado    Decimal  @map("costo_asignado")
+  ganancia         Decimal
+  margenPorcentaje Decimal  @map("margen_porcentaje")
+  notas            String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  formaPago PaymentMethod @relation(fields: [formaPagoId], references: [id])
+  cliente   Customer      @relation(fields: [clienteId], references: [id])
+  producto  Product       @relation(fields: [productoId], references: [id])
+
+  @@index([fecha])
+  @@index([clienteId])
+  @@index([formaPagoId])
+  @@index([productoId])
+  @@map("ventas")
+}
