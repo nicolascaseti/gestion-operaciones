@@ -2,7 +2,7 @@ import ExcelJS from 'exceljs'
 
 export async function parseExcelFile(buffer: Buffer): Promise<Record<string, unknown>[]> {
   const workbook = new ExcelJS.Workbook()
-  await workbook.xlsx.load(buffer)
+  await workbook.xlsx.load(buffer as unknown as ArrayBuffer)
 
   const worksheet = workbook.worksheets[0]
   if (!worksheet) {
