@@ -1,6 +1,8 @@
 import { prisma } from '@/lib/prisma'
 import { CompraForm } from '@/components/forms/compra-form'
 
+export const dynamic = 'force-dynamic'
+
 export default async function NuevaCompraPage() {
   const [productos, proveedores] = await Promise.all([
     prisma.product.findMany({
