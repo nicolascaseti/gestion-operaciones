@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { createProductoSchema } from '@/lib/validations/catalogos'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const productos = await prisma.product.findMany({

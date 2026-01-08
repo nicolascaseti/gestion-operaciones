@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getAnalytics } from '@/lib/analytics'
 import { subDays, parseISO } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams

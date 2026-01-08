@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { parseExcelFile, parseDate, parseNumber } from '@/lib/excel/import'
 import { Decimal } from '@prisma/client/runtime/library'
 
+export const dynamic = 'force-dynamic'
+
 interface ImportError {
   row: number
   message: string

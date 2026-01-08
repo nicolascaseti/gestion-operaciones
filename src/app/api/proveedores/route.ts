@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { createProveedorSchema } from '@/lib/validations/catalogos'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const proveedores = await prisma.supplier.findMany({

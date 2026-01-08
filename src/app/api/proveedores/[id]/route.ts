@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { updateProveedorSchema } from '@/lib/validations/catalogos'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }

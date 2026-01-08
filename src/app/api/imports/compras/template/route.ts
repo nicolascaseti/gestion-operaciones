@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server'
 import { createWorkbook, setupWorksheet, autosizeColumns } from '@/lib/excel/config'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
     const workbook = createWorkbook()

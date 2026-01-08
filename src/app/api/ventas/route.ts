@@ -3,6 +3,8 @@ import { prisma } from '@/lib/prisma'
 import { ventaFilterSchema, createVentaSchema } from '@/lib/validations/venta'
 import { z } from 'zod'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: NextRequest) {
   try {
     const searchParams = request.nextUrl.searchParams
