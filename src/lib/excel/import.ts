@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 
+// Parse Excel file to array of objects
 export async function parseExcelFile(buffer: Buffer): Promise<Record<string, unknown>[]> {
   const workbook = new ExcelJS.Workbook()
   await workbook.xlsx.load(buffer as unknown as ArrayBuffer)
