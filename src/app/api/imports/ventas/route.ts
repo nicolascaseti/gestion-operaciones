@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTenantId } from '@/lib/session'
 import { parseExcelFile, parseDate, parseNumber } from '@/lib/excel/import'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -12,6 +13,7 @@ interface ImportError {
 
 export async function POST(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -34,7 +36,7 @@ export async function POST(request: NextRequest) {
 
     // Obtener datos para validacion
     const productos = await prisma.product.findMany({
-      where: { activo: true },
+      where: { tenantId, activo: true },
       select: {
         id: true,
         codigo: true,
@@ -44,11 +46,11 @@ export async function POST(request: NextRequest) {
       },
     })
     const clientes = await prisma.customer.findMany({
-      where: { activo: true },
+      where: { tenantId, activo: true },
       select: { id: true, nombre: true },
     })
     const formasPago = await prisma.paymentMethod.findMany({
-      where: { activo: true },
+      where: { tenantId, activo: true },
       select: { id: true, nombre: true },
     })
 
@@ -67,6 +69,7 @@ export async function POST(request: NextRequest) {
 
     const errors: ImportError[] = []
     const validSales: {
+      tenantId: string
       fecha: Date
       formaPagoId: number
       clienteId: number
@@ -184,6 +187,7 @@ export async function POST(request: NextRequest) {
         null
 
       validSales.push({
+        tenantId,
         fecha,
         formaPagoId: formaPago.id,
         clienteId: cliente.id,

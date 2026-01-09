@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTenantId } from '@/lib/session'
 import { parseExcelFile, parseDate, parseNumber } from '@/lib/excel/import'
 import { Decimal } from '@prisma/client/runtime/library'
 
@@ -12,6 +13,7 @@ interface ImportError {
 
 export async function POST(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -34,11 +36,11 @@ export async function POST(request: NextRequest) {
 
     // Obtener productos y proveedores para validacion
     const productos = await prisma.product.findMany({
-      where: { activo: true },
+      where: { tenantId, activo: true },
       select: { id: true, codigo: true, nombre: true, costoDefault: true },
     })
     const proveedores = await prisma.supplier.findMany({
-      where: { activo: true },
+      where: { tenantId, activo: true },
       select: { id: true, nombre: true },
     })
 
@@ -54,6 +56,7 @@ export async function POST(request: NextRequest) {
 
     const errors: ImportError[] = []
     const validPurchases: {
+      tenantId: string
       fecha: Date
       proveedorId: number
       productoId: number
@@ -141,6 +144,7 @@ export async function POST(request: NextRequest) {
         null
 
       validPurchases.push({
+        tenantId,
         fecha,
         proveedorId: proveedor.id,
         productoId: producto.id,
