@@ -1,6 +1,9 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
+import { useSession, signOut } from 'next-auth/react'
+import { Button } from '@/components/ui/button'
+import { LogOut, User } from 'lucide-react'
 
 const pageTitles: Record<string, string> = {
   '/': 'Inicio',
@@ -23,6 +26,7 @@ const pageTitles: Record<string, string> = {
 
 export function Header() {
   const pathname = usePathname()
+  const { data: session } = useSession()
 
   const getTitle = () => {
     if (pageTitles[pathname]) return pageTitles[pathname]
@@ -31,10 +35,33 @@ export function Header() {
     return 'Gestion de Operaciones'
   }
 
+  const handleLogout = () => {
+    signOut({ callbackUrl: '/login' })
+  }
+
   return (
     <header className="sticky top-0 z-30 border-b border-dark-600 bg-dark-900/80 backdrop-blur-sm">
-      <div className="flex h-14 items-center px-6">
+      <div className="flex h-14 items-center justify-between px-6">
         <h1 className="text-lg font-medium text-white">{getTitle()}</h1>
+
+        {session?.user && (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 text-sm text-gray-400">
+              <User className="h-4 w-4" />
+              <span>{session.user.name}</span>
+              <span className="text-gold-500">({session.user.tenantName})</span>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleLogout}
+              className="text-gray-400 hover:text-white hover:bg-dark-700"
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              Salir
+            </Button>
+          </div>
+        )}
       </div>
     </header>
   )

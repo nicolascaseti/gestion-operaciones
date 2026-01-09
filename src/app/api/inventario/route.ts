@@ -1,13 +1,16 @@
 import { NextResponse } from 'next/server'
 import { getInventory, getCategories } from '@/lib/inventory'
+import { getTenantId } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const tenantId = await getTenantId()
+
     const [inventory, categories] = await Promise.all([
-      getInventory(),
-      getCategories(),
+      getInventory(tenantId),
+      getCategories(tenantId),
     ])
 
     return NextResponse.json({ inventory, categories })

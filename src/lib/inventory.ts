@@ -34,9 +34,9 @@ export interface Movement {
   precioUnitario?: number
 }
 
-export async function getInventory(): Promise<InventoryItem[]> {
+export async function getInventory(tenantId: string): Promise<InventoryItem[]> {
   const productos = await prisma.product.findMany({
-    where: { activo: true },
+    where: { tenantId, activo: true },
     include: {
       compras: {
         select: {
@@ -115,9 +115,9 @@ export async function getInventory(): Promise<InventoryItem[]> {
   })
 }
 
-export async function getInventoryDetail(id: number): Promise<InventoryDetail | null> {
-  const producto = await prisma.product.findUnique({
-    where: { id },
+export async function getInventoryDetail(tenantId: string, id: number): Promise<InventoryDetail | null> {
+  const producto = await prisma.product.findFirst({
+    where: { id, tenantId },
     include: {
       compras: {
         select: {
@@ -216,6 +216,7 @@ export async function getInventoryDetail(id: number): Promise<InventoryDetail | 
 }
 
 export async function updateInventoryProduct(
+  tenantId: string,
   id: number,
   data: {
     stockInicial?: number
@@ -245,9 +246,10 @@ export async function updateInventoryProduct(
   })
 }
 
-export async function getCategories(): Promise<string[]> {
+export async function getCategories(tenantId: string): Promise<string[]> {
   const result = await prisma.product.findMany({
     where: {
+      tenantId,
       activo: true,
       categoria: { not: null },
     },

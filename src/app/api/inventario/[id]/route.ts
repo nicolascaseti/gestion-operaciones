@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getInventoryDetail, updateInventoryProduct } from '@/lib/inventory'
+import { getTenantId } from '@/lib/session'
 
 export const dynamic = 'force-dynamic'
 
@@ -8,6 +9,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
+    const tenantId = await getTenantId()
     const id = parseInt(params.id)
     if (isNaN(id)) {
       return NextResponse.json(
@@ -16,7 +18,7 @@ export async function GET(
       )
     }
 
-    const detail = await getInventoryDetail(id)
+    const detail = await getInventoryDetail(tenantId, id)
 
     if (!detail) {
       return NextResponse.json(
@@ -40,6 +42,7 @@ export async function PUT(
   { params }: { params: { id: string } }
 ) {
   try {
+    const tenantId = await getTenantId()
     const id = parseInt(params.id)
     if (isNaN(id)) {
       return NextResponse.json(
@@ -50,7 +53,7 @@ export async function PUT(
 
     const body = await request.json()
 
-    const updated = await updateInventoryProduct(id, {
+    const updated = await updateInventoryProduct(tenantId, id, {
       stockInicial: body.stockInicial,
       stockMinimo: body.stockMinimo,
       precioDefault: body.precioVenta,

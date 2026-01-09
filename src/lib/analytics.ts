@@ -105,7 +105,7 @@ function calculateKPI(current: number, previous: number): KPIData {
   }
 }
 
-export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData> {
+export async function getAnalytics(tenantId: string, dateRange: DateRange): Promise<AnalyticsData> {
   const { from, to } = dateRange
 
   // Calcular período anterior para comparación
@@ -127,6 +127,7 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     // Ventas período actual
     prisma.sale.findMany({
       where: {
+        tenantId,
         fecha: { gte: startOfDay(from), lte: endOfDay(to) }
       },
       include: { cliente: true, producto: true }
@@ -134,6 +135,7 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     // Compras período actual
     prisma.purchase.findMany({
       where: {
+        tenantId,
         fecha: { gte: startOfDay(from), lte: endOfDay(to) }
       },
       include: { proveedor: true }
@@ -141,12 +143,14 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     // Ventas período anterior
     prisma.sale.findMany({
       where: {
+        tenantId,
         fecha: { gte: startOfDay(previousFrom), lte: endOfDay(previousTo) }
       }
     }),
     // Compras período anterior
     prisma.purchase.findMany({
       where: {
+        tenantId,
         fecha: { gte: startOfDay(previousFrom), lte: endOfDay(previousTo) }
       }
     }),
@@ -154,6 +158,7 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     prisma.sale.groupBy({
       by: ['productoId', 'codigoProducto', 'nombreProducto'],
       where: {
+        tenantId,
         fecha: { gte: startOfDay(from), lte: endOfDay(to) }
       },
       _sum: {
@@ -171,6 +176,7 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     prisma.sale.groupBy({
       by: ['clienteId'],
       where: {
+        tenantId,
         fecha: { gte: startOfDay(from), lte: endOfDay(to) }
       },
       _sum: { ventaTotal: true },
@@ -184,6 +190,7 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     prisma.purchase.groupBy({
       by: ['proveedorId'],
       where: {
+        tenantId,
         fecha: { gte: startOfDay(from), lte: endOfDay(to) }
       },
       _sum: { costoTotal: true },
@@ -193,7 +200,7 @@ export async function getAnalytics(dateRange: DateRange): Promise<AnalyticsData>
     }),
     // Inventario - productos activos
     prisma.product.findMany({
-      where: { activo: true },
+      where: { tenantId, activo: true },
       include: {
         compras: {
           orderBy: { fecha: 'desc' },

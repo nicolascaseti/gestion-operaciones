@@ -8,15 +8,52 @@ datasource db {
   directUrl = env("DIRECT_URL")
 }
 
+// ==================== AUTENTICACION ====================
+
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users          User[]
+  products       Product[]
+  suppliers      Supplier[]
+  customers      Customer[]
+  paymentMethods PaymentMethod[]
+  purchases      Purchase[]
+  sales          Sale[]
+
+  @@map("tenants")
+}
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  password      String
+  name          String
+  role          String    @default("user") // admin, user
+  tenantId      String    @map("tenant_id")
+  emailVerified DateTime? @map("email_verified")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@map("users")
+}
+
 // ==================== CATALOGOS ====================
 
 model Product {
   id            Int      @id @default(autoincrement())
-  codigo        String   @unique
+  tenantId      String   @map("tenant_id")
+  codigo        String
   nombre        String
   categoria     String?
   descripcion   String?
-  imagen        String?  // URL o base64 de la imagen
+  imagen        String?
   costoDefault  Decimal  @default(0) @map("costo_default")
   precioDefault Decimal  @default(0) @map("precio_default")
   stockInicial  Decimal  @default(0) @map("stock_inicial")
@@ -25,14 +62,18 @@ model Product {
   createdAt     DateTime @default(now()) @map("created_at")
   updatedAt     DateTime @updatedAt @map("updated_at")
 
+  tenant  Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   compras Purchase[]
   ventas  Sale[]
 
+  @@unique([tenantId, codigo])
+  @@index([tenantId])
   @@map("productos")
 }
 
 model Supplier {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @map("tenant_id")
   nombre    String
   contacto  String?
   telefono  String?
@@ -41,13 +82,16 @@ model Supplier {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenant  Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   compras Purchase[]
 
+  @@index([tenantId])
   @@map("proveedores")
 }
 
 model Customer {
   id        Int      @id @default(autoincrement())
+  tenantId  String   @map("tenant_id")
   nombre    String
   contacto  String?
   telefono  String?
@@ -56,20 +100,26 @@ model Customer {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ventas Sale[]
 
+  @@index([tenantId])
   @@map("clientes")
 }
 
 model PaymentMethod {
   id        Int      @id @default(autoincrement())
-  nombre    String   @unique
+  tenantId  String   @map("tenant_id")
+  nombre    String
   activo    Boolean  @default(true)
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   ventas Sale[]
 
+  @@unique([tenantId, nombre])
+  @@index([tenantId])
   @@map("formas_pago")
 }
 
@@ -77,6 +127,7 @@ model PaymentMethod {
 
 model Purchase {
   id             Int      @id @default(autoincrement())
+  tenantId       String   @map("tenant_id")
   fecha          DateTime
   proveedorId    Int      @map("proveedor_id")
   productoId     Int      @map("producto_id")
@@ -89,9 +140,11 @@ model Purchase {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
 
+  tenant    Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   proveedor Supplier @relation(fields: [proveedorId], references: [id])
   producto  Product  @relation(fields: [productoId], references: [id])
 
+  @@index([tenantId])
   @@index([fecha])
   @@index([proveedorId])
   @@index([productoId])
@@ -100,6 +153,7 @@ model Purchase {
 
 model Sale {
   id               Int      @id @default(autoincrement())
+  tenantId         String   @map("tenant_id")
   fecha            DateTime
   formaPagoId      Int      @map("forma_pago_id")
   clienteId        Int      @map("cliente_id")
@@ -116,10 +170,12 @@ model Sale {
   createdAt        DateTime @default(now()) @map("created_at")
   updatedAt        DateTime @updatedAt @map("updated_at")
 
+  tenant    Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   formaPago PaymentMethod @relation(fields: [formaPagoId], references: [id])
   cliente   Customer      @relation(fields: [clienteId], references: [id])
   producto  Product       @relation(fields: [productoId], references: [id])
 
+  @@index([tenantId])
   @@index([fecha])
   @@index([clienteId])
   @@index([formaPagoId])

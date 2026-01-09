@@ -1,16 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { compraFilterSchema, createCompraSchema } from '@/lib/validations/compra'
+import { getTenantId } from '@/lib/session'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const searchParams = request.nextUrl.searchParams
     const filters = compraFilterSchema.parse(Object.fromEntries(searchParams))
 
     const where = {
+      tenantId,
       ...(filters.fechaDesde &&
         filters.fechaHasta && {
           fecha: {
@@ -56,11 +59,12 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const body = await request.json()
     const data = createCompraSchema.parse(body)
 
-    const producto = await prisma.product.findUnique({
-      where: { id: data.productoId },
+    const producto = await prisma.product.findFirst({
+      where: { id: data.productoId, tenantId },
     })
 
     if (!producto) {
@@ -74,6 +78,7 @@ export async function POST(request: NextRequest) {
 
     const compra = await prisma.purchase.create({
       data: {
+        tenantId,
         fecha: data.fecha,
         proveedorId: data.proveedorId,
         productoId: data.productoId,

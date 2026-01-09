@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createProductoSchema } from '@/lib/validations/catalogos'
+import { getTenantId } from '@/lib/session'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const tenantId = await getTenantId()
+
     const productos = await prisma.product.findMany({
+      where: { tenantId },
       orderBy: { nombre: 'asc' },
     })
 
@@ -23,11 +27,12 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const body = await request.json()
     const data = createProductoSchema.parse(body)
 
-    const existing = await prisma.product.findUnique({
-      where: { codigo: data.codigo },
+    const existing = await prisma.product.findFirst({
+      where: { tenantId, codigo: data.codigo },
     })
 
     if (existing) {
@@ -39,6 +44,7 @@ export async function POST(request: NextRequest) {
 
     const producto = await prisma.product.create({
       data: {
+        tenantId,
         codigo: data.codigo,
         nombre: data.nombre,
         costoDefault: data.costoDefault,

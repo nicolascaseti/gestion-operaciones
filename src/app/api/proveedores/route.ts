@@ -1,13 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { createProveedorSchema } from '@/lib/validations/catalogos'
+import { getTenantId } from '@/lib/session'
 import { z } from 'zod'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET() {
   try {
+    const tenantId = await getTenantId()
+
     const proveedores = await prisma.supplier.findMany({
+      where: { tenantId },
       orderBy: { nombre: 'asc' },
     })
 
@@ -23,11 +27,13 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const body = await request.json()
     const data = createProveedorSchema.parse(body)
 
     const proveedor = await prisma.supplier.create({
       data: {
+        tenantId,
         nombre: data.nombre,
         contacto: data.contacto || null,
         telefono: data.telefono || null,

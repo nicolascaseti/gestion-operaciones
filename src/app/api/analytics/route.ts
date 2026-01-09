@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAnalytics } from '@/lib/analytics'
+import { getTenantId } from '@/lib/session'
 import { subDays, parseISO } from 'date-fns'
 
 export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const searchParams = request.nextUrl.searchParams
     const fromParam = searchParams.get('from')
     const toParam = searchParams.get('to')
@@ -25,7 +27,7 @@ export async function GET(request: NextRequest) {
       from = subDays(new Date(), 30)
     }
 
-    const analytics = await getAnalytics({ from, to })
+    const analytics = await getAnalytics(tenantId, { from, to })
 
     return NextResponse.json(analytics)
   } catch (error) {
