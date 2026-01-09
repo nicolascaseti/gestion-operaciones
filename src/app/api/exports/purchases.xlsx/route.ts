@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getTenantId } from '@/lib/session'
 import { createWorkbook, setupWorksheet, autosizeColumns, EXCEL_CONFIG } from '@/lib/excel/config'
 import { format } from 'date-fns'
 
@@ -7,6 +8,7 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    const tenantId = await getTenantId()
     const searchParams = request.nextUrl.searchParams
     const fechaDesde = searchParams.get('fechaDesde')
     const fechaHasta = searchParams.get('fechaHasta')
@@ -14,6 +16,7 @@ export async function GET(request: NextRequest) {
     const productoId = searchParams.get('productoId')
 
     const where = {
+      tenantId,
       ...(fechaDesde &&
         fechaHasta && {
           fecha: {

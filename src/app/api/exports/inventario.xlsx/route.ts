@@ -1,11 +1,15 @@
 import { NextResponse } from 'next/server'
 import { getInventory } from '@/lib/inventory'
+import { getTenantId } from '@/lib/session'
 import { createWorkbook, setupWorksheet, autosizeColumns, EXCEL_CONFIG } from '@/lib/excel/config'
 import { format } from 'date-fns'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET() {
   try {
-    const inventory = await getInventory()
+    const tenantId = await getTenantId()
+    const inventory = await getInventory(tenantId)
 
     const workbook = createWorkbook()
     const worksheet = workbook.addWorksheet('Inventario')
