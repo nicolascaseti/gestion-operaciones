@@ -11,6 +11,14 @@ interface ImportError {
   message: string
 }
 
+interface ImportResult {
+  success: number
+  errors: ImportError[]
+  created: {
+    customers: string[]
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const tenantId = await getTenantId()
@@ -68,6 +76,7 @@ export async function POST(request: NextRequest) {
     )
 
     const errors: ImportError[] = []
+    const createdCustomers: string[] = []
     const validSales: {
       tenantId: string
       fecha: Date
@@ -97,17 +106,34 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Buscar cliente
-      const clienteNombre = (
+      // Buscar cliente - auto-crear si no existe
+      const clienteNombreOriginal = (
         (row['cliente'] || row['customer'] || row['nombre_cliente']) as string
-      )?.toLowerCase()
-      const cliente = clienteNombre ? clientesMap.get(clienteNombre) : null
-      if (!cliente) {
+      )?.trim()
+      const clienteNombre = clienteNombreOriginal?.toLowerCase()
+
+      if (!clienteNombre) {
         errors.push({
           row: rowNum,
-          message: `Cliente no encontrado: ${clienteNombre || 'vacio'}`,
+          message: 'Cliente vacio o faltante',
         })
         continue
+      }
+
+      let cliente = clientesMap.get(clienteNombre)
+
+      // Auto-crear cliente si no existe
+      if (!cliente) {
+        const nuevoCliente = await prisma.customer.create({
+          data: {
+            tenantId,
+            nombre: clienteNombreOriginal,
+            activo: true,
+          },
+        })
+        cliente = { id: nuevoCliente.id, nombre: nuevoCliente.nombre }
+        clientesMap.set(clienteNombre, cliente)
+        createdCustomers.push(clienteNombreOriginal)
       }
 
       // Buscar forma de pago
@@ -214,6 +240,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: validSales.length,
       errors,
+      created: {
+        customers: createdCustomers,
+      },
     })
   } catch (error) {
     console.error('Error importing sales:', error)

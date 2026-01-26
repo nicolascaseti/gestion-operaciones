@@ -11,6 +11,14 @@ interface ImportError {
   message: string
 }
 
+interface ImportResult {
+  success: number
+  errors: ImportError[]
+  created: {
+    suppliers: string[]
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const tenantId = await getTenantId()
@@ -55,6 +63,7 @@ export async function POST(request: NextRequest) {
     )
 
     const errors: ImportError[] = []
+    const createdSuppliers: string[] = []
     const validPurchases: {
       tenantId: string
       fecha: Date
@@ -80,19 +89,34 @@ export async function POST(request: NextRequest) {
         continue
       }
 
-      // Buscar proveedor
-      const proveedorNombre = (
+      // Buscar proveedor - auto-crear si no existe
+      const proveedorNombreOriginal = (
         (row['proveedor'] || row['supplier'] || row['nombre_proveedor']) as string
-      )?.toLowerCase()
-      const proveedor = proveedorNombre
-        ? proveedoresMap.get(proveedorNombre)
-        : null
-      if (!proveedor) {
+      )?.trim()
+      const proveedorNombre = proveedorNombreOriginal?.toLowerCase()
+
+      if (!proveedorNombre) {
         errors.push({
           row: rowNum,
-          message: `Proveedor no encontrado: ${proveedorNombre || 'vacio'}`,
+          message: 'Proveedor vacio o faltante',
         })
         continue
+      }
+
+      let proveedor = proveedoresMap.get(proveedorNombre)
+
+      // Auto-crear proveedor si no existe
+      if (!proveedor) {
+        const nuevoProveedor = await prisma.supplier.create({
+          data: {
+            tenantId,
+            nombre: proveedorNombreOriginal,
+            activo: true,
+          },
+        })
+        proveedor = { id: nuevoProveedor.id, nombre: nuevoProveedor.nombre }
+        proveedoresMap.set(proveedorNombre, proveedor)
+        createdSuppliers.push(proveedorNombreOriginal)
       }
 
       // Buscar producto por codigo o nombre
@@ -167,6 +191,9 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: validPurchases.length,
       errors,
+      created: {
+        suppliers: createdSuppliers,
+      },
     })
   } catch (error) {
     console.error('Error importing purchases:', error)

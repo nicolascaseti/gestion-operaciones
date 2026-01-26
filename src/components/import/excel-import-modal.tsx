@@ -6,14 +6,19 @@ import { Button } from '@/components/ui/button'
 
 interface ImportResult {
   success: number
+  updated?: number
   errors: { row: number; message: string }[]
+  created?: {
+    suppliers?: string[]
+    customers?: string[]
+  }
 }
 
 interface ExcelImportModalProps {
   isOpen: boolean
   onClose: () => void
   onImportComplete: () => void
-  type: 'compras' | 'ventas'
+  type: 'compras' | 'ventas' | 'productos'
   templateColumns: { header: string; key: string; required: boolean; example: string }[]
 }
 
@@ -102,7 +107,7 @@ export function ExcelImportModal({
         {/* Header */}
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-xl font-semibold text-white">
-            Importar {type === 'compras' ? 'Compras' : 'Ventas'}
+            Importar {type === 'compras' ? 'Compras' : type === 'ventas' ? 'Ventas' : 'Productos'}
           </h2>
           <button
             onClick={handleClose}
@@ -219,14 +224,36 @@ export function ExcelImportModal({
         {/* Resultado */}
         {result && (
           <div className="mb-4 space-y-3">
-            {result.success > 0 && (
+            {(result.success > 0 || (result.updated && result.updated > 0)) && (
               <div className="rounded-lg bg-success/10 border border-success/20 p-3 flex items-start gap-2">
                 <CheckCircle className="h-5 w-5 text-success shrink-0 mt-0.5" />
-                <p className="text-sm text-success">
-                  {result.success} registros importados correctamente
-                </p>
+                <div className="text-sm text-success">
+                  {result.success > 0 && (
+                    <p>{result.success} registros importados correctamente</p>
+                  )}
+                  {result.updated && result.updated > 0 && (
+                    <p>{result.updated} registros actualizados</p>
+                  )}
+                </div>
               </div>
             )}
+            {result.created && (result.created.suppliers?.length || result.created.customers?.length) ? (
+              <div className="rounded-lg bg-gold-400/10 border border-gold-400/20 p-3">
+                <p className="text-sm text-gold-400 font-medium mb-1">
+                  Entidades creadas automaticamente:
+                </p>
+                {result.created.suppliers?.length ? (
+                  <p className="text-xs text-gold-400/80">
+                    Proveedores: {result.created.suppliers.join(', ')}
+                  </p>
+                ) : null}
+                {result.created.customers?.length ? (
+                  <p className="text-xs text-gold-400/80">
+                    Clientes: {result.created.customers.join(', ')}
+                  </p>
+                ) : null}
+              </div>
+            ) : null}
             {result.errors.length > 0 && (
               <div className="rounded-lg bg-danger/10 border border-danger/20 p-3">
                 <div className="flex items-start gap-2 mb-2">
