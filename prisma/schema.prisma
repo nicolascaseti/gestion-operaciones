@@ -23,6 +23,7 @@ model Tenant {
   paymentMethods PaymentMethod[]
   purchases      Purchase[]
   sales          Sale[]
+  whatsappConfig WhatsAppConfig?
 
   @@map("tenants")
 }
@@ -35,13 +36,31 @@ model User {
   role          String    @default("user") // admin, user
   tenantId      String    @map("tenant_id")
   emailVerified DateTime? @map("email_verified")
+  whatsappPhone String?   @map("whatsapp_phone") // Numero de WhatsApp vinculado
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@index([whatsappPhone])
   @@map("users")
+}
+
+// Configuracion de WhatsApp Business API por tenant
+model WhatsAppConfig {
+  id                  String   @id @default(cuid())
+  tenantId            String   @unique @map("tenant_id")
+  phoneNumberId       String?  @map("phone_number_id") // ID del numero en Meta
+  accessToken         String?  @map("access_token") // Token de acceso
+  webhookVerifyToken  String   @map("webhook_verify_token") // Token para verificar webhook
+  isActive            Boolean  @default(false) @map("is_active")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("whatsapp_config")
 }
 
 // ==================== CATALOGOS ====================

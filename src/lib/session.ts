@@ -1,4 +1,5 @@
 import { auth } from '@/lib/auth'
+import { prisma } from '@/lib/prisma'
 
 export async function getSession() {
   const session = await auth()
@@ -19,4 +20,17 @@ export async function requireAuth() {
     throw new Error('Not authenticated')
   }
   return session.user
+}
+
+export async function getCurrentUser() {
+  const session = await auth()
+  if (!session?.user?.id) {
+    return null
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+  })
+
+  return user
 }
